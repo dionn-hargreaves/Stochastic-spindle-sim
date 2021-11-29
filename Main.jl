@@ -54,5 +54,6 @@ close(save_params)
 @time initialStates = preset(p)
 
 q = (folderName, NumGenerators, NumStates, 10000000, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
+println("Time to simulate :)")
 
 @time simulate(Notes, q, initialStates)
