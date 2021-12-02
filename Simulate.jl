@@ -10,23 +10,34 @@ module Simulate
 using Base.Threads
 using Plots
 using Random
-using BSON: @save
+using DelimitedFiles
 using LaTeXStrings
 using Statistics: mean
+using CircularArrayBuffers
 # import local modules
 using GillespieTransitions
 
+
 @inline function simulate(Notes, p, initialStates)
 
-
+    # import parameters
     folderName, NumGenerators, NumStates, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on = p
+    initZ, MastParams, inittPassed, GenList = initialStates
+    #open files
+    upperFile = open("$folderName/$Notes+_upper.txt","a")
+    lowerFile = open("$folderName/$Notes+_lower.txt","a")
+    poleFile = open("$folderName/$Notes+_pole.txt","a")
+    timeFile = open("$folderName/$Notes+_timestamp.txt","a")
 
-    GenList = zeros(2,NumGenerators*2)
-    tPassed = zeros(finalTime*10) # array to hold time passed
-    z = zeros(finalTime*10)
+    # initialise arrays
+    #GenList = zeros(2,NumGenerators*2)
+    tPassed = CircularArrayBuffer{Float64}(2) #zeros(finalTime*10) # array to hold time passed
+    z = CircularArrayBuffer{Float64}(2) #zeros(finalTime*10)
 
-    z[1], MastParams, tPassed[1], GenList = initialStates
+    push!(z, initZ)
+    push!(tPassed, inittPassed)
 
+    # set forward, backward and switching parameters (upper and lower cortex)
     UpparamB = zeros(3,NumStates)
     UpparamB[3, :] .= ω_0*exp.(γ.*ExtList)
     DownparamB = zeros(3,NumStates)
@@ -38,26 +49,20 @@ using GillespieTransitions
     DownparamU[3, :] .= ω_on; # binding
 
 
-    Hold_index = zeros(NumGenerators*2,finalTime*10) # saves extension states for all time
-    #println("here")
-    Hold_index[:,1] .= GenList[1,:]
-    # create a vector to hold number of bound generators
-    noBound_Up = zeros(finalTime*10)
-    noBound_Down = zeros(finalTime*10)
-    avgYBound_Up = zeros(finalTime*10)
-    avgYUnbound_Up = zeros(finalTime*10)
-    avgYBound_Down = zeros(finalTime*10)
-    avgYUnbound_Down = zeros(finalTime*10)
-
-    BStateX = zeros(NumGenerators*2,finalTime*10) # saves binding states for all time
-    BStateX[:,1] .= GenList[2,:]
+    noBound_Up = CircularArrayBuffer{Int64}(2) #   zeros(finalTime*10)
+    noBound_Down = CircularArrayBuffer{Int64}(2) #zeros(finalTime*10)
+    avgYBound_Up = CircularArrayBuffer{Float64}(2) #zeros(finalTime*10)
+    avgYUnbound_Up = CircularArrayBuffer{Float64}(2)#zeros(finalTime*10)
+    avgYBound_Down = CircularArrayBuffer{Float64}(2)#zeros(finalTime*10)
+    avgYUnbound_Down = CircularArrayBuffer{Float64}(2)#zeros(finalTime*10)
 
     j = 1 # time counter
     FileCount = 1 # file counter
     while j != finalTime*10
         j+=1 # tick time
-        genInd, chState, tPassed[j] = gillespieTran!(MastParams, tPassed[j-1])
+        genInd, chState, newtPassed = gillespieTran!(MastParams, tPassed[end])
         ## returns genInd, inidex of changed generator, chState, how generator is affected, and new sim time
+        push!(tPassed, newtPassed)
         if chState == 1.0 # retraction
             GenList[1, genInd] -= 1
         elseif chState == 2.0 # extension
@@ -75,22 +80,20 @@ using GillespieTransitions
             println(chState)
         end
 =#
-        if tPassed[j]<tPassed[j-1] # backwards in time flag
+        if tPassed[2]<tPassed[1] # backwards in time flag
             println("Backwards in time! We've broken the biscuits!")
             println(findall(x->x<0, MastParams))
-            return @save "$folderName/$Notes+_results.bson" BStateX Hold_index z tPassed
         end
 
 
-        Hold_index[:, j] .= GenList[1,:] # update index list
-        BStateX[:,j] .= GenList[2,:] # update bind state list
+
 
         ## update parameters based on new system
         BoundUp = findall(x->x>0, GenList[2,1:NumGenerators])
         BoundDown = findall(x->x>0, GenList[2,NumGenerators+1:end]).+NumGenerators
-        DzDt = (1/0.625).*( -K*z[j-1]-(sum(ExtList[GenList[1,BoundDown]])-sum(ExtList[GenList[1,BoundUp]]))) # new spindle velocity
-        z[j] = z[j-1]+(tPassed[j]-tPassed[j-1])*DzDt # new spindle position, forward Euler
-
+        DzDt = (1/0.625).*( -K*z[end]-(sum(ExtList[GenList[1,BoundDown]])-sum(ExtList[GenList[1,BoundUp]]))) # new spindle velocity
+        newZ = z[end]+(tPassed[end]-tPassed[1])*DzDt # new spindle position, forward Euler
+        push!(z, newZ)
 
         upV = 1.0 .- ExtList .+ DzDt # new v+ for parameters
         downV = 1.0 .- ExtList .- DzDt # new v- for parameters
@@ -122,62 +125,34 @@ using GillespieTransitions
             end
         end
 
-        noBound_Up[j] = length(findall(x -> x > 0, BStateX[1:NumGenerators,j]))
-        noBound_Down[j] = length(findall(x -> x > 0, BStateX[(1+NumGenerators):2*NumGenerators,j]))
-        avgYBound_Up[j] = mean(ExtList[convert(Array{Int64,1},Hold_index[findall(x -> x > 0, BStateX[1:NumGenerators,j]),j])])
-        avgYBound_Down[j] = mean(ExtList[convert(Array{Int64,1},Hold_index[findall(x -> x > 0, BStateX[(1+NumGenerators):2*NumGenerators,j]),j])])
-        avgYUnbound_Up[j] = mean(ExtList[convert(Array{Int64,1},Hold_index[findall(x -> x < 0, BStateX[1:NumGenerators,j]),j])])
-        avgYUnbound_Down[j] = mean(ExtList[convert(Array{Int64,1},Hold_index[findall(x -> x < 0, BStateX[(1+NumGenerators):2*NumGenerators,j]),j])])
+        push!(noBound_Up, length(findall(x -> x > 0, GenList[2, 1:NumGenerators])))
+        push!(noBound_Down, length(findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators])))
+        push!(avgYBound_Up, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, 1:NumGenerators])])]))
+        push!(avgYBound_Down, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators])])]))
+        push!(avgYUnbound_Up, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, 1:NumGenerators])])]))
+        push!(avgYUnbound_Down, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, (1+NumGenerators):2*NumGenerators])])]))
 
-        if mod(j,100000) == 0
+
+
+        if mod(j,1000) == 0
             #sBStateX = BStateX[:,(j+1-100000):j]
             #sHold_index = Hold_index[:,(j+1-100000):j]
-            snoBound_Up = noBound_Up[(j+1-100000):j]
-            snoBound_Down = noBound_Down[(j+1-100000):j]
-            savgYBound_Up = avgYBound_Up[(j+1-100000):j]
-            savgYBound_Down = avgYBound_Down[(j+1-100000):j]
-            savgYUnbound_Up = avgYUnbound_Up[(j+1-100000):j]
-            savgYUnbound_Down = avgYUnbound_Down[(j+1-100000):j]
-            sz = z[(j+1-100000):j]
-            st = tPassed[(j+1-100000):j]
-            #@save "$folderName/$Notes+$FileCount+_results.bson" sBStateX sHold_index sz st
-            @save "$folderName/$Notes+$FileCount+_results.bson" snoBound_Up snoBound_Down savgYBound_Up savgYBound_Down savgYUnbound_Up savgYUnbound_Down sz st
-            FileCount+=1
+            writedlm(upperFile, [ noBound_Up[end] avgYBound_Up[end] avgYUnbound_Up[end]])
+            writedlm(lowerFile, [ noBound_Down[end] avgYBound_Down[end] avgYUnbound_Down[end]])
+            writedlm(poleFile, [ z[end]])
+            writedlm(timeFile, [ tPassed[end]])
+            if mod(j, 10000) == 0
+                flush(upperFile)
+                flush(lowerFile)
+                flush(poleFile)
+                flush(timeFile)
+            end
         end
     end
-
-
-    #### Plootting sections
-    p1 = plot(legend = false)
-    p2 = plot(legend = false)
-    for i in 1:NumGenerators
-        #println("in scatter loop")
-        UpBXinds = findall(x -> x > 0, BStateX[i,:])
-        DownBXinds = findall(x -> x > 0, BStateX[NumGenerators+i,:])
-        # scatter bound indices
-        p1 = scatter!(p1, tPassed[UpBXinds], ExtList[convert(Array{Int64,1},Hold_index[i,UpBXinds])], markercolor = :green, markersize = 0.5)
-        p2 = scatter!(p2, tPassed[DownBXinds], ExtList[convert(Array{Int64,1},Hold_index[NumGenerators+i,DownBXinds])], markercolor = :green, markersize = 0.5)
-
-        #p1 = plot!(p1, tPassed[:], ExtList[convert(Array{Int64,1},Hold_index[i,:])], xlabel = "Time", ylabel = "extension state")
-        #p2 = plot!(p2, tPassed[:], ExtList[convert(Array{Int64,1},Hold_index[NumGenerators+i,:])], xlabel = "Time", ylabel = "extension state")
-
-
-        UpUXinds = findall(x -> x < 0, BStateX[i,:])
-        DownUXinds = findall(x -> x < 0, BStateX[NumGenerators+i,:])
-        # scatter unbound indices
-        p1 = scatter!(p1, tPassed[UpUXinds], ExtList[convert(Array{Int64,1},Hold_index[i,UpUXinds])], markercolor = :red, markersize = 0.5)
-        p1 = plot!( ylabel = L"\bar{y}^+", yguidefontsize = 12)
-        p2 = scatter!(p2, tPassed[DownUXinds], ExtList[convert(Array{Int64,1},Hold_index[NumGenerators+i,DownUXinds])], markercolor = :red, markersize = 0.5)
-        p2 = plot!(ylabel = L"\bar{y}^-", yguidefontsize = 12, xlabelfontsize = 12, xlabel = L"\bar{t}")
-    end
-
-     #p = plot!(ylim = (5e-8, 6e-8))
-    p = plot(p1, p2, layout = (2,1))
-    display(p)
-    savefig(p,"$folderName/$Notes")
-
-    plot(tPassed, z, xlabel = L"\bar{t}", ylabel = L"\bar{z}", yguidefontsize = 12, xguidefontsize = 12)
-    savefig("$folderName/PolePosition")
+close(upperFile)
+close(lowerFile)
+close(poleFile)
+close(timeFile)
 return 1
 end
 

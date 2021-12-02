@@ -5,7 +5,7 @@ workingFolder = "/Volumes/DH_Simulations/"
 cd(workingFolder)
 
 
-Notes = "N30_Alpha_Beta_Larger_bigger_onrate_smallerK"
+Notes = "N30_Alpha_Beta_Larger_bigger_onrate_smallerK_newfiles"
 
 
 folderNotFound = 0
@@ -25,7 +25,7 @@ end
 # set up seed for random numbers, set parameters
 NumGenerators = 30 # per cortex
 NumStates = 6000 # number of states for extension length
-finalTime = 70000000
+finalTime = 700000
 
 maxExt = 6 # maximum extension available
 ExtList = LinRange(0,maxExt,NumStates) # full list  of available extensions
@@ -35,8 +35,7 @@ ExtList = LinRange(0,maxExt,NumStates) # full list  of available extensions
 dExt = ExtList[2]-ExtList[1] # dL
 v = 1 .- ExtList # velocity term, need a ±z_t term eventually
 γ = 2.0
-z = zeros(2) #initial
-z[1] = 0
+z = 0
 μ = 50
 K = 5e-3
 ω_0 = 0.001
@@ -53,7 +52,7 @@ close(save_params)
 
 @time initialStates = preset(p)
 
-q = (folderName, NumGenerators, NumStates, 10000000, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
+q = (folderName, NumGenerators, NumStates, 100000000, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
 println("Time to simulate :)")
 
 @time simulate(Notes, q, initialStates)

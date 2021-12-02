@@ -1,10 +1,11 @@
 module Presets
 
+using CircularArrayBuffers
 using GillespieTransitions
 using Random
 
 @inline function preset(p)
-    folderName, NumGenerators, NumStates, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on = p
+    folderName, NumGenerators, NumStates, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, initZ, μ, K, ω_0, ω_on = p
 
     GenList = zeros(2,NumGenerators*2)
     MastParams = zeros((NumGenerators*3)*2)
@@ -46,8 +47,11 @@ using Random
     GenList[end,:] .= 1
 
     GenList = convert(Array{Int64, 2}, GenList) # so that we can use values as indices later
-    tPassed = zeros(2) # array to hold time passed
 
+    tPassed = CircularArrayBuffer{Float64}(2) #zeros(finalTime*10) # array to hold time passed
+    z = CircularArrayBuffer{Float64}(2) #zeros(finalTime*10)
+    push!(tPassed, 0.0)
+    push!(z, initZ)
 
     for i in 1:NumGenerators*2 # fill master list of all possible state change probabilities for each generator
         if GenList[2,i] == 1
@@ -62,7 +66,8 @@ using Random
     j = 1 # time counter
     while j <= finalTime
         j+=1 # tick time
-        genInd, chState, tPassed[2] = gillespieTran!(MastParams, tPassed[1])
+        genInd, chState, newtPassed = gillespieTran!(MastParams, tPassed[end])
+        push!(tPassed, newtPassed)
         ## returns genInd, inidex of changed generator, chState, how generator is affected, and new sim time
         if chState == 1.0 # retraction
             GenList[1, genInd] -= 1
@@ -81,7 +86,7 @@ using Random
             println(chState)
         end
 =#
-        if tPassed[2]<tPassed[1] # backwards in time flag
+        if tPassed[end]<tPassed[1] # backwards in time flag
             println("Backwards in time! We've broken the biscuits!")
             println(findall(x->x<0, MastParams))
             #return @save "$folderName/$Notes+_results.bson" BStateX Hold_index z tPassed
@@ -90,9 +95,9 @@ using Random
         ## update parameters based on new system
         BoundUp = findall(x->x>0, GenList[2,1:NumGenerators])
         BoundDown = findall(x->x>0, GenList[2,NumGenerators+1:end]).+NumGenerators
-        DzDt = (1/0.625).*( -K*z[1]-(sum(ExtList[GenList[1,BoundDown]])-sum(ExtList[GenList[1,BoundUp]]))) # new spindle velocity
-        z[2] = z[1]+(tPassed[2]-tPassed[1])*DzDt # new spindle position, forward Euler
-
+        DzDt = (1/0.625).*( -K*z[end]-(sum(ExtList[GenList[1,BoundDown]])-sum(ExtList[GenList[1,BoundUp]]))) # new spindle velocity
+        newZ = z[end]+(tPassed[end]-tPassed[1])*DzDt # new spindle position, forward Euler
+        push!(z,newZ)
 
         upV = 1.0 .- ExtList .+ DzDt # new v+ for parameters
         downV = 1.0 .- ExtList .- DzDt # new v- for parameters
@@ -124,11 +129,9 @@ using Random
             end
         end
 
-        tPassed[1] = tPassed[2]
-        z[1] = z[2]
     end
 
-initialStates = (z[2], MastParams, tPassed[2], GenList)
+initialStates = (z[end], MastParams, tPassed[end], GenList)
 
 return initialStates
 end
