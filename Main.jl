@@ -5,7 +5,11 @@ workingFolder = "/Volumes/DH_Simulations/"
 cd(workingFolder)
 
 
+<<<<<<< Updated upstream
 Notes = "N30_Alpha_Beta_Larger_bigger_onrate_smallerK_newfiles"
+=======
+Notes = "N30_Alpha_Beta_Larger_smallerK_newfiles"
+>>>>>>> Stashed changes
 
 
 folderNotFound = 0
@@ -25,7 +29,11 @@ end
 # set up seed for random numbers, set parameters
 NumGenerators = 30 # per cortex
 NumStates = 6000 # number of states for extension length
+<<<<<<< Updated upstream
 finalTime = 700000
+=======
+finalTime = 7000
+>>>>>>> Stashed changes
 
 maxExt = 6 # maximum extension available
 ExtList = LinRange(0,maxExt,NumStates) # full list  of available extensions
@@ -39,7 +47,11 @@ z = 0
 μ = 50
 K = 5e-3
 ω_0 = 0.001
+<<<<<<< Updated upstream
 ω_on = 0.03
+=======
+ω_on = 0.003
+>>>>>>> Stashed changes
 
 p = (folderName, NumGenerators, NumStates, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
 
@@ -52,7 +64,11 @@ close(save_params)
 
 @time initialStates = preset(p)
 
+<<<<<<< Updated upstream
 q = (folderName, NumGenerators, NumStates, 100000000, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
+=======
+q = (folderName, NumGenerators, NumStates, 10000, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
+>>>>>>> Stashed changes
 println("Time to simulate :)")
 
 @time simulate(Notes, q, initialStates)
