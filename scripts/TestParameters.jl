@@ -1,4 +1,4 @@
-workingFolder   = "/Volumes/DH_Simulations/"
+dataDirectory   = "output"
 Notes           = "N30_Alpha_Beta_Larger_bigger_onrate_smallerK_newfiles"
 NumGenerators   = 30 # per cortex
 NumStates       = 6000 # number of states for extension length

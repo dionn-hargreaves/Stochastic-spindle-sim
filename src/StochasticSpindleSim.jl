@@ -7,25 +7,20 @@ using Simulate
 using Presets
 
 
-function stochasticSpindleSim(workingFolder,Notes,NumGenerators,NumStates,finalTime,maxExt,α,β,Γ,γ,z,μ,K,ω_0,ω_on)
-
-    cd(workingFolder)
+function stochasticSpindleSim(dataDirectory,Notes,NumGenerators,NumStates,finalTime,maxExt,α,β,Γ,γ,z,μ,K,ω_0,ω_on)
 
     folderNotFound = 0
     folderCounter = 0
-    folderName = "$workingFolder/output/GillespieRunData_$Notes$folderCounter"
+    folderRoot = "$dataDirectory/GillespieRunData_$Notes"
+    folderName = ""
     while folderNotFound==0
-        if isdir("$workingFolder/output/GillespieRunData_$Notes$folderCounter")
-            global folderCounter += 1
+        if isdir("$folderRoot$folderCounter")
+            folderCounter += 1
         else
-            folderName = "$workingFolder/output/GillespieRunData_$Notes$folderCounter"
+            folderName = "$folderRoot$folderCounter"
             folderNotFound = 1
         end
     end
-
-
-
-
 
     ExtList = LinRange(0,maxExt,NumStates) # full list  of available extensions
     dExt = ExtList[2]-ExtList[1] # dL
