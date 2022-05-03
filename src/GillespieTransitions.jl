@@ -16,15 +16,15 @@ using Random
 
 @inline @views function gillespieTran!(param, tPassed)
     # choose a random variable
-    choiceParam = rand()
+    choiceParam, timeParam = rand(2)
 
 
     # find time to next event
-    τ = (1/sum(param)).*log(1/rand())
+    τ = (1/sum(param)).*log(1/timeParam)
     # save time stamp
     tPassed = tPassed+τ
 
-
+    #param .= param.*τ
     # accumulate probabilities
     param_line = cumsum(param)./sum(param)
     # Find where along the accumulation line the second random variable lies

@@ -8,10 +8,8 @@ module Simulate
 
 # import Julia packages
 using Base.Threads
-using Plots
 using Random
 using DelimitedFiles
-using LaTeXStrings
 using Statistics: mean
 using CircularArrayBuffers
 # import local modules
@@ -81,7 +79,7 @@ using GillespieTransitions
         end
 =#
         if tPassed[2]<tPassed[1] # backwards in time flag
-            println("Backwards in time! We've broken the biscuits!")
+            println("Backwards in time!")
             println(findall(x->x<0, MastParams))
         end
 
@@ -95,8 +93,8 @@ using GillespieTransitions
         newZ = z[end]+(tPassed[end]-tPassed[1])*DzDt # new spindle position, forward Euler
         push!(z, newZ)
 
-        upV = 1.0 .- ExtList .+ DzDt # new v+ for parameters
-        downV = 1.0 .- ExtList .- DzDt # new v- for parameters
+        upV = 1.0 .- ExtList .- DzDt # new v+ for parameters
+        downV = 1.0 .- ExtList .+ DzDt # new v- for parameters
         UpparamB[1,2:NumStates] .= α/(dExt^2) .- upV[2:NumStates]/(2*dExt); # updating parameter
         UpparamB[2,1:NumStates-1] .= α/(dExt^2) .+ upV[1:NumStates-1]/(2*dExt); # updating parameter
         DownparamB[1,2:NumStates] .= α/(dExt^2) .- downV[2:NumStates]/(2*dExt); # updating parameter
@@ -128,20 +126,20 @@ using GillespieTransitions
         push!(noBound_Up, length(findall(x -> x > 0, GenList[2, 1:NumGenerators])))
         push!(noBound_Down, length(findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators])))
         push!(avgYBound_Up, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, 1:NumGenerators])])]))
-        push!(avgYBound_Down, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators])])]))
+        push!(avgYBound_Down, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators]).+NumGenerators])]))
         push!(avgYUnbound_Up, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, 1:NumGenerators])])]))
-        push!(avgYUnbound_Down, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, (1+NumGenerators):2*NumGenerators])])]))
+        push!(avgYUnbound_Down, mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, (1+NumGenerators):2*NumGenerators]).+NumGenerators])]))
 
 
 
-        if mod(j,1000) == 0
+        if mod(j,10000000) == 0
             #sBStateX = BStateX[:,(j+1-100000):j]
             #sHold_index = Hold_index[:,(j+1-100000):j]
             writedlm(upperFile, [ noBound_Up[end] avgYBound_Up[end] avgYUnbound_Up[end]])
             writedlm(lowerFile, [ noBound_Down[end] avgYBound_Down[end] avgYUnbound_Down[end]])
             writedlm(poleFile, [ z[end]])
             writedlm(timeFile, [ tPassed[end]])
-            if mod(j, 10000) == 0
+            if mod(j, 100000000) == 0
                 flush(upperFile)
                 flush(lowerFile)
                 flush(poleFile)
