@@ -7,17 +7,18 @@ using Simulate
 using Presets
 
 
-function stochasticSpindleSim(dataDirectory,Notes,NumGenerators,NumStates,finalTime,maxExt,α,β,Γ,γ,z,μ,K,ω_0,ω_on)
+function stochasticSpindleSim(workingFolder,Notes,NumGenerators,NumStates,finalTime,burnTime,maxExt,α,β,Γ,γ,z,μ,K,ω_0,ω_on)
+
+    cd(workingFolder)
 
     folderNotFound = 0
-    folderCounter = 0
-    folderRoot = "$dataDirectory/GillespieRunData_$Notes"
-    folderName = ""
+    local folderCounter = 0
+    #folderName = "$workingFolder/output/GillespieRunData_$Notes$folderCounter"
     while folderNotFound==0
-        if isdir("$folderRoot$folderCounter")
+        if isdir("$workingFolder/output/GillespieRunData_$Notes$folderCounter")
             folderCounter += 1
         else
-            folderName = "$folderRoot$folderCounter"
+            global folderName = "$workingFolder/output/GillespieRunData_$Notes$folderCounter"
             folderNotFound = 1
         end
     end
@@ -26,21 +27,21 @@ function stochasticSpindleSim(dataDirectory,Notes,NumGenerators,NumStates,finalT
     dExt = ExtList[2]-ExtList[1] # dL
     v = 1 .- ExtList # velocity term, need a ±z_t term eventually
 
-    p = (folderName, NumGenerators, NumStates, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
+    p = (folderName, NumGenerators, NumStates, burnTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
 
     ## saving parameters in a text file
     mkpath(folderName)
     save_params = open("$folderName/run_parameters.txt","w")
-    write(save_params, "NumGenerators NumStates maxExt finalTime α β Γ dExt \n")
-    write(save_params, string(NumGenerators, ", ", NumStates,", ", maxExt,", ", finalTime,", ", α,", ", β,", ", Γ,", ", dExt))
+    write(save_params, "NumGenerators NumStates maxExt finalTime α β Γ dExt w_on w_0   \n")
+    write(save_params, string(NumGenerators, ", ", NumStates,", ", maxExt,", ", finalTime,", ", α,", ", β,", ", Γ,", ", dExt, ", ", ω_on, ", ", ω_0))
     close(save_params)
 
-    @time initialStates = preset(p)
+    initialStates = preset(p)
 
-    q = (folderName, NumGenerators, NumStates, 100000000, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
+    q = (folderName, NumGenerators, NumStates, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
     println("Time to simulate :)")
 
-    @time simulate(Notes, q, initialStates)
+    simulate(Notes, q, initialStates)
 
     return 0
 
