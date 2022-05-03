@@ -132,7 +132,7 @@ using GillespieTransitions
 
 
 
-        if mod(j,10000000) == 0
+        if mod(j,10000) == 0
             #sBStateX = BStateX[:,(j+1-100000):j]
             #sHold_index = Hold_index[:,(j+1-100000):j]
             writedlm(upperFile, [ noBound_Up[end] avgYBound_Up[end] avgYUnbound_Up[end]])

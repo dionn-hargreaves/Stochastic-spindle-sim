@@ -1,10 +1,10 @@
-workingFolder   = "/Users/mbcx4dh9/Documents/Woolner,S_Jensen,O/PhD/Julia_code/Stochastic-spindle-sim"
+workingFolder   = "/Users/christopher/Postdoc/Manchester/StudentProjects/Stochastic-spindle-sim"
 remoteFolder    = "./output"
 Notes           = "N15_test"
 NumGenerators   = 15 # per cortex
 NumStates       = 6000 # number of states for extension length
-burnTime        = 1000000
-finalTime       = 1000000000
+burnTime        = 1000000÷5000
+finalTime       = 1000000000÷5000
 maxExt          = 6                     # maximum extension available
 α               = 0.0771604938271605
 β               = 0.0397701918786256
