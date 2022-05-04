@@ -13,8 +13,8 @@ using Random
     Random.seed!(1234) # random number seed
     # parameters: bound generators
     paramB = zeros(3,NumStates)
-    paramB[1,2:NumStates] .= α/(dExt^2) .- v[2:NumStates]./(2*dExt); # backward
-    paramB[2,1:NumStates-1] .= α/(dExt^2) .+ v[1:NumStates-1]./(2*dExt); #forward
+    paramB[1,2:NumStates] .= α/(dExt^2) .- v[2:NumStates]./(2*dExt) # backward
+    paramB[2,1:NumStates-1] .= α/(dExt^2) .+ v[1:NumStates-1]./(2*dExt) #forward
     paramB[3, :] .= ω_0*exp.(γ.*ExtList) #unbind
 
     UpparamB = zeros(3,NumStates)
@@ -25,14 +25,14 @@ using Random
 
     # parameters: unbound generators
     paramU = zeros(3,NumStates)
-    paramU[1,2:NumStates] .=  Γ.*(β/(dExt^2) .+ ExtList[2:NumStates]./(2*dExt)); # backward
-    paramU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- ExtList[1:NumStates-1]./(2*dExt)); # forward
-    paramU[3, :] .= ω_on; # bind
+    paramU[1,2:NumStates] .=  Γ.*(β/(dExt^2) .+ ExtList[2:NumStates]./(2*dExt)) # backward
+    paramU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- ExtList[1:NumStates-1]./(2*dExt)) # forward
+    paramU[3, :] .= ω_on # bind
 
     UpparamU = zeros(3,NumStates)
-    UpparamU[3, :] .= ω_on; # binding
+    UpparamU[3, :] .= ω_on # binding
     DownparamU = zeros(3,NumStates)
-    DownparamU[3, :] .= ω_on; # binding
+    DownparamU[3, :] .= ω_on # binding
 
 
     # Generate list of generators, holds extension position and bind state
@@ -101,16 +101,16 @@ using Random
 
         upV = 1.0 .- ExtList .+ DzDt # new v+ for parameters
         downV = 1.0 .- ExtList .- DzDt # new v- for parameters
-        UpparamB[1,2:NumStates] .= α/(dExt^2) .- upV[2:NumStates]/(2*dExt); # updating parameter
-        UpparamB[2,1:NumStates-1] .= α/(dExt^2) .+ upV[1:NumStates-1]/(2*dExt); # updating parameter
-        DownparamB[1,2:NumStates] .= α/(dExt^2) .- downV[2:NumStates]/(2*dExt); # updating parameter
-        DownparamB[2,1:NumStates-1] .= α/(dExt^2) .+ downV[1:NumStates-1]/(2*dExt); # updating parameter
+        UpparamB[1,2:NumStates] .= α/(dExt^2) .- upV[2:NumStates]/(2*dExt) # updating parameter
+        UpparamB[2,1:NumStates-1] .= α/(dExt^2) .+ upV[1:NumStates-1]/(2*dExt) # updating parameter
+        DownparamB[1,2:NumStates] .= α/(dExt^2) .- downV[2:NumStates]/(2*dExt) # updating parameter
+        DownparamB[2,1:NumStates-1] .= α/(dExt^2) .+ downV[1:NumStates-1]/(2*dExt) # updating parameter
 
 
-        UpparamU[1,2:NumStates] .= Γ.*(β/(dExt^2) .+ (ExtList[2:NumStates]./(2*dExt))); # backward
-        UpparamU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- (ExtList[2:NumStates]./(2*dExt))); # forward
-        DownparamU[1,2:NumStates] .= Γ.*(β/(dExt^2) .+ (ExtList[2:NumStates]./(2*dExt))); # backward
-        DownparamU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- (ExtList[2:NumStates]./(2*dExt))); # forward
+        UpparamU[1,2:NumStates] .= Γ.*(β/(dExt^2) .+ (ExtList[2:NumStates]./(2*dExt))) # backward
+        UpparamU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- (ExtList[2:NumStates]./(2*dExt))) # forward
+        DownparamU[1,2:NumStates] .= Γ.*(β/(dExt^2) .+ (ExtList[2:NumStates]./(2*dExt))) # backward
+        DownparamU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- (ExtList[2:NumStates]./(2*dExt))) # forward
 
         # update master parameters based on current states
         for i in 1:NumGenerators # upper cortex

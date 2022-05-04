@@ -13,17 +13,6 @@ function stochasticSpindleSim(Notes,NumGenerators,NumStates,finalTime,burnTime,m
 
     # cd(workingFolder)
 
-    # folderNotFound = 0
-    # folderCounter = 0
-    # #folderName = "$workingFolder/output/GillespieRunData_$Notes$folderCounter"
-    # while folderNotFound==0
-    #     if isdir(datadir("sims",Notes,"GillespieRunData_$(Dates.format(Dates.now(),"yy-mm-dd-HH-MM-SS"))"))
-    #         folderCounter += 1
-    #     else
-    #         folderName = datadir("sims",Notes,"GillespieRunData_$(Dates.format(Dates.now(),"yy-mm-dd-HH-MM-SS"))")
-    #         folderNotFound = 1
-    #     end
-    # end
     folderName = datadir("sims",Notes,"GillespieRunData_$(Dates.format(Dates.now(),"yy-mm-dd-HH-MM-SS"))")
     mkpath(folderName)
 

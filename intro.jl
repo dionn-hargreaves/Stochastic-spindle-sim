@@ -14,4 +14,9 @@ issues on GitHub, submitting feature requests,
 or even opening your own Pull Requests!
 """
 )
+
+@info "Loading test parameters"
+include("scripts/TestParameters.jl")
+
+@info "Precompiling project"
 using StochasticSpindleSim

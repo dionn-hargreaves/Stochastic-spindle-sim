@@ -1,5 +1,5 @@
-workingFolder   = "/Users/christopher/Postdoc/Manchester/StudentProjects/Stochastic-spindle-sim"
-remoteFolder    = "./output"
+#workingFolder   = "/Users/christopher/Postdoc/Manchester/StudentProjects/Stochastic-spindle-sim"
+# remoteFolder    = "./output"
 Notes           = "N15_test"
 NumGenerators   = 15 # per cortex
 NumStates       = 6000 # number of states for extension length
