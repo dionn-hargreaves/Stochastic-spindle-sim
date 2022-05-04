@@ -12,6 +12,7 @@ using Random
 using DelimitedFiles
 using Statistics: mean
 using CircularArrayBuffers
+using FastBroadcast
 # import local modules
 using GillespieTransitions
 
@@ -95,16 +96,16 @@ using GillespieTransitions
 
         upV = 1.0 .- ExtList .- DzDt        # new v+ for parameters
         downV = 1.0 .- ExtList .+ DzDt      # new v- for parameters
-        UpparamB[1,2:NumStates] .= α/(dExt^2) .- upV[2:NumStates]/(2*dExt)          # updating parameter
-        UpparamB[2,1:NumStates-1] .= α/(dExt^2) .+ upV[1:NumStates-1]/(2*dExt)      # updating parameter
-        DownparamB[1,2:NumStates] .= α/(dExt^2) .- downV[2:NumStates]/(2*dExt)      # updating parameter
-        DownparamB[2,1:NumStates-1] .= α/(dExt^2) .+ downV[1:NumStates-1]/(2*dExt)  # updating parameter
+        @.. thread=true UpparamB[1,2:NumStates] = α/(dExt^2) - upV[2:NumStates]/(2*dExt)          # updating parameter
+        @.. thread=true UpparamB[2,1:NumStates-1] = α/(dExt^2) + upV[1:NumStates-1]/(2*dExt)      # updating parameter
+        @.. thread=true DownparamB[1,2:NumStates] = α/(dExt^2) - downV[2:NumStates]/(2*dExt)      # updating parameter
+        @.. thread=true DownparamB[2,1:NumStates-1] = α/(dExt^2) + downV[1:NumStates-1]/(2*dExt)  # updating parameter
 
 
-        UpparamU[1,2:NumStates] .= Γ.*(β/(dExt^2) .+ (ExtList[2:NumStates]./(2*dExt))) # backward
-        UpparamU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- (ExtList[2:NumStates]./(2*dExt))) # forward
-        DownparamU[1,2:NumStates] .= Γ.*(β/(dExt^2) .+ (ExtList[2:NumStates]./(2*dExt))) # backward
-        DownparamU[2,1:NumStates-1] .= Γ.*(β/(dExt^2) .- (ExtList[2:NumStates]./(2*dExt))) # forward
+        @.. thread=true UpparamU[1,2:NumStates] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
+        @.. thread=true UpparamU[2,1:NumStates-1] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
+        @.. thread=true DownparamU[1,2:NumStates] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
+        @.. thread=true DownparamU[2,1:NumStates-1] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
 
         # update master parameters based on current states
         for i in 1:NumGenerators # upper cortex
