@@ -14,4 +14,6 @@ include("scripts/TestParameters.jl")
 @info "Precompiling project"
 
 push!(LOAD_PATH,"src")
+using Revise
+using BenchmarkTools
 using StochasticSpindleSim

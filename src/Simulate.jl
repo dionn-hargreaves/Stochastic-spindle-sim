@@ -27,7 +27,8 @@ using GillespieTransitions
     lowerFile = open("$folderName/$Notes+_lower.txt","a")
     poleFile = open("$folderName/$Notes+_pole.txt","a")
     timeFile = open("$folderName/$Notes+_timestamp.txt","a")
-
+    #save_parameters = open("$folderName/$Notes+_mastParams.txt","a")
+    #boundstate = open("$folderName/$Notes+_bound.txt","a")
     # initialise arrays
     #GenList = zeros(2,NumGenerators*2)
     tPassed = CircularArrayBuffer{Float64}(2) #zeros(finalTime*10) # array to hold time passed
@@ -54,6 +55,11 @@ using GillespieTransitions
     avgYUnbound_Up = CircularArrayBuffer{Float64}(2)#zeros(finalTime*10)
     avgYBound_Down = CircularArrayBuffer{Float64}(2)#zeros(finalTime*10)
     avgYUnbound_Down = CircularArrayBuffer{Float64}(2)#zeros(finalTime*10)
+    DzDt_loop = CircularArrayBuffer{Float64}(2)
+    push!(DzDt_loop,0)
+
+    α_use = α/(dExt^2)
+    β_use = β/(dExt^2)
 
     j = 1 # time counter
     FileCount = 1 # file counter
@@ -91,21 +97,26 @@ using GillespieTransitions
         BoundUp = findall(x->x>0, GenList[2,1:NumGenerators])
         BoundDown = findall(x->x>0, GenList[2,NumGenerators+1:end]).+NumGenerators
         DzDt = (1/0.625).*( -K*z[end]-(sum(ExtList[GenList[1,BoundDown]])-sum(ExtList[GenList[1,BoundUp]]))) # new spindle velocity
+        push!(DzDt_loop, DzDt)
         newZ = z[end]+(tPassed[end]-tPassed[1])*DzDt # new spindle position, forward Euler
         push!(z, newZ)
 
-        upV = 1.0 .- ExtList .- DzDt        # new v+ for parameters
-        downV = 1.0 .- ExtList .+ DzDt      # new v- for parameters
-        @.. thread=true UpparamB[1,2:NumStates] = α/(dExt^2) - upV[2:NumStates]/(2*dExt)          # updating parameter
-        @.. thread=true UpparamB[2,1:NumStates-1] = α/(dExt^2) + upV[1:NumStates-1]/(2*dExt)      # updating parameter
-        @.. thread=true DownparamB[1,2:NumStates] = α/(dExt^2) - downV[2:NumStates]/(2*dExt)      # updating parameter
-        @.. thread=true DownparamB[2,1:NumStates-1] = α/(dExt^2) + downV[1:NumStates-1]/(2*dExt)  # updating parameter
+        if DzDt_loop[2]*DzDt_loop[1] < 0 || mod(j,100) == 0 ### may  reduce computational time
+
+            upV = 1.0 .- ExtList .- DzDt        # new v+ for parameters
+            downV = 1.0 .- ExtList .+ DzDt      # new v- for parameters
+            UpparamB[1,2:NumStates] .= α_use .- upV[2:NumStates]./(2*dExt)          # updating parameter
+            UpparamB[2,1:NumStates-1] .= α_use .+ upV[1:NumStates-1]./(2*dExt)      # updating parameter
+            DownparamB[1,2:NumStates] .= α_use .- downV[2:NumStates]./(2*dExt)      # updating parameter
+            DownparamB[2,1:NumStates-1] .= α_use .+ downV[1:NumStates-1]./(2*dExt)  # updating parameter
 
 
-        @.. thread=true UpparamU[1,2:NumStates] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
-        @.. thread=true UpparamU[2,1:NumStates-1] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
-        @.. thread=true DownparamU[1,2:NumStates] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
-        @.. thread=true DownparamU[2,1:NumStates-1] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
+            UpparamU[1,2:NumStates] .= Γ.*(β_use .+ (ExtList[2:NumStates]./(2*dExt))) # backward
+            UpparamU[2,1:NumStates-1] .= Γ.*(β_use .- (ExtList[2:NumStates]./(2*dExt))) # forward
+            DownparamU[1,2:NumStates] .= Γ.*(β_use .+ (ExtList[2:NumStates]./(2*dExt))) # backward
+            DownparamU[2,1:NumStates-1] .= Γ.*(β_use .- (ExtList[2:NumStates]./(2*dExt))) # forward
+
+        end
 
         # update master parameters based on current states
         for i in 1:NumGenerators # upper cortex
@@ -123,6 +134,9 @@ using GillespieTransitions
                 MastParams[3*i-2:3*i] .= DownparamU[:, GenList[1,i]]
             end
         end
+
+        #writedlm(save_parameters, [MastParams])
+        #writedlm(boundstate, [GenList[2,:]])
 
         push!(noBound_Up, length(findall(x -> x > 0, GenList[2, 1:NumGenerators])))
         push!(noBound_Down, length(findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators])))
@@ -148,10 +162,12 @@ using GillespieTransitions
             end
         end
     end
+#close(save_parameters)
 close(upperFile)
 close(lowerFile)
 close(poleFile)
 close(timeFile)
+#close(boundstate)
 return 1
 end
 
