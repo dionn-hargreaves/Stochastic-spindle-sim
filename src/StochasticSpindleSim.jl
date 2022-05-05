@@ -20,20 +20,15 @@ function stochasticSpindleSim(Notes,NumGenerators,NumStates,finalTime,burnTime,m
     dExt = ExtList[2]-ExtList[1] # dL
     v = 1 .- ExtList # velocity term, need a ±z_t term eventually
 
-    p = (folderName, NumGenerators, NumStates, burnTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
-
     ## saving parameters in a text file
     save_params = open("$folderName/run_parameters.txt","w")
     write(save_params, "NumGenerators NumStates maxExt finalTime α β Γ dExt w_on w_0   \n")
     write(save_params, string(NumGenerators, ", ", NumStates,", ", maxExt,", ", finalTime,", ", α,", ", β,", ", Γ,", ", dExt, ", ", ω_on, ", ", ω_0))
     close(save_params)
 
-    initialStates = preset(p)
+    p = (folderName, NumGenerators, NumStates, burnTime, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
 
-    q = (folderName, NumGenerators, NumStates, finalTime, maxExt, ExtList, α, β, Γ, dExt, v, γ, z, μ, K, ω_0, ω_on)
-    # println("Time to simulate :)")
-
-    simulate(Notes, q, initialStates)
+    simulate(Notes, p)
 
     return 0
 

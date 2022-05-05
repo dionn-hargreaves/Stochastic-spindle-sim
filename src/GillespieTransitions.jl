@@ -49,10 +49,10 @@ using Random
     chState = mod(chooseFunc, 3)
 
     # which generator is it?
-    genInd = ceil(chooseFunc/3)
+    genInd = ceil(Int64, chooseFunc/3)
 
 
-    return convert(Int64,genInd), chState, tPassed
+    return genInd, chState, tPassed
 end
 
 
