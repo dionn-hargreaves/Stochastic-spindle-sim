@@ -14,7 +14,7 @@ using Random
 
 
 
-@inline @views function gillespieTran!(param, tPassed)
+@inline @views function gillespieTran!(stateIndVec, param, tPassed)
     # choose a random variable
     choiceParam, timeParam = rand(2)
 
@@ -46,13 +46,13 @@ using Random
     #end
 
     # which state is it?
-    chState = mod(chooseFunc, 3)
+    stateIndVec[1] = mod(chooseFunc, 3)
 
     # which generator is it?
-    genInd = ceil(Int64, chooseFunc/3)
+    stateIndVec[2] = ceil(Int64, chooseFunc/3)
 
 
-    return genInd, chState, tPassed
+    return tPassed
 end
 
 

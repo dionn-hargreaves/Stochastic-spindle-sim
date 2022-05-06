@@ -6,8 +6,6 @@ module StochasticSpindleSim
 using DrWatson
 using Dates
 using Simulate
-using Presets
-
 
 function stochasticSpindleSim(Notes,NumGenerators,NumStates,finalTime,burnTime,maxExt,α,β,Γ,γ,z,μ,K,ω_0,ω_on)
 

@@ -7,7 +7,7 @@
 module Simulate
 
 # import Julia packages
-using Base.Threads
+# using Base.Threads
 using Random
 using DelimitedFiles
 using Statistics: mean
@@ -83,26 +83,26 @@ using GillespieTransitions
     tPassed = 0.0
     newtPassed = 0.0
     z = 0.0
-    noBound_Up       = 0
-    noBound_Down     = 0
-    avgYBound_Up     = 0.0
-    avgYUnbound_Up   = 0.0
-    avgYBound_Down   = 0.0
-    avgYUnbound_Down = 0.0
+    noBoundVec = zeros(Int64,2)# [noBound_Up, noBound_Down]
+    avgYVec = zeros(Float64,4) # [avgYBound_Up, avgYUnbound_Up, avgYBound_Down, avgYUnbound_Down]
+
+    stateIndVec = zeros(Int64,2) # [chState, genInd]
 
     j = 1 # time counter
     FileCount = 1 # file counter
     while j != finalTime*10
-        j+=1 # tick time
-        genInd, chState, newtPassed = gillespieTran!(MastParams, tPassed)
-        ## returns genInd, inidex of changed generator, chState, how generator is affected, and new sim time
 
-        if chState == 1.0 # retraction
-            GenList[1, genInd] -= 1
-        elseif chState == 2.0 # extension
-            GenList[1, genInd] += 1
+        j+=1 # tick time
+
+        newtPassed = gillespieTran!(stateIndVec, MastParams, tPassed)
+        ## returns stateIndVec[2], inidex of changed generator, stateIndVec[1], how generator is affected, and new sim time
+
+        if stateIndVec[1] == 1 # retraction
+            GenList[1, stateIndVec[2]] -= 1
+        elseif stateIndVec[1] == 2 # extension
+            GenList[1, stateIndVec[2]] += 1
         else # bind/unbind
-            GenList[2, genInd] = GenList[2, genInd]*-1
+            GenList[2, stateIndVec[2]] = GenList[2, stateIndVec[2]]*-1
         end
 
         if newtPassed<tPassed # backwards in time flag
@@ -147,19 +147,22 @@ using GillespieTransitions
             end
         end
 
-        noBound_Up       = length(findall(x -> x > 0, GenList[2, 1:NumGenerators]))
-        noBound_Down     = length(findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators]))
-        avgYBound_Up     = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, 1:NumGenerators])])])
-        avgYBound_Down   = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators]).+NumGenerators])])
-        avgYUnbound_Up   = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, 1:NumGenerators])])])
-        avgYUnbound_Down = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, (1+NumGenerators):2*NumGenerators]).+NumGenerators])])
-
+# *** Wrap all of these parameters into an array and just update each component of the array
+        noBoundVec[1] = length(findall(x -> x > 0, GenList[2, 1:NumGenerators]))
+        noBoundVec[2] = length(findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators]))
+        avgYVec[1]    = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, 1:NumGenerators])])])
+        avgYVec[3]    = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x > 0, GenList[2, (1+NumGenerators):2*NumGenerators]).+NumGenerators])])
+        avgYVec[2]    = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, 1:NumGenerators])])])
+        avgYVec[4]    = mean(ExtList[convert(Array{Int64,1},GenList[1, findall(x -> x < 0, GenList[2, (1+NumGenerators):2*NumGenerators]).+NumGenerators])])
+# ***************
 
         if (mod(j,10000) == 0) && (tPassed > burnTime)
-            writedlm(upperFile, [ noBound_Up avgYBound_Up avgYUnbound_Up ])
-            writedlm(lowerFile, [ noBound_Down avgYBound_Down avgYUnbound_Down ])
+# *** Write a slice of the variables array to file; don't create a new array within the function call
+            writedlm(upperFile, [ noBoundVec[1] avgYVec[1] avgYVec[2] ])
+            writedlm(lowerFile, [ noBoundVec[2] avgYVec[3] avgYVec[4] ])
             writedlm(poleFile, [ z ])
             writedlm(timeFile, [ tPassed ])
+# ***************
             if mod(j, 100000000) == 0
                 flush(upperFile)
                 flush(lowerFile)
