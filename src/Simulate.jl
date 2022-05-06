@@ -119,16 +119,16 @@ using GillespieTransitions
 
         upV = 1.0 .- ExtList .- DzDt        # new v+ for parameters
         downV = 1.0 .- ExtList .+ DzDt      # new v- for parameters
-        @.. thread=false UpparamB[2:NumStates,1] = α/(dExt^2) - upV[2:NumStates]/(2*dExt)          # updating parameter
-        @.. thread=false UpparamB[1:NumStates-1,2] = α/(dExt^2) + upV[1:NumStates-1]/(2*dExt)      # updating parameter
-        @.. thread=false DownparamB[2:NumStates,1] = α/(dExt^2) - downV[2:NumStates]/(2*dExt)      # updating parameter
-        @.. thread=false DownparamB[1:NumStates-1,2] = α/(dExt^2) + downV[1:NumStates-1]/(2*dExt)  # updating parameter
+        @.. thread=true UpparamB[2:NumStates,1] = α/(dExt^2) - upV[2:NumStates]/(2*dExt)          # updating parameter
+        @.. thread=true UpparamB[1:NumStates-1,2] = α/(dExt^2) + upV[1:NumStates-1]/(2*dExt)      # updating parameter
+        @.. thread=true DownparamB[2:NumStates,1] = α/(dExt^2) - downV[2:NumStates]/(2*dExt)      # updating parameter
+        @.. thread=true DownparamB[1:NumStates-1,2] = α/(dExt^2) + downV[1:NumStates-1]/(2*dExt)  # updating parameter
 
 
-        @.. thread=false UpparamU[2:NumStates,1] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
-        @.. thread=false UpparamU[1:NumStates-1,2] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
-        @.. thread=false DownparamU[2:NumStates,1] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
-        @.. thread=false DownparamU[1:NumStates-1,2] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
+        @.. thread=true UpparamU[2:NumStates,1] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
+        @.. thread=true UpparamU[1:NumStates-1,2] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
+        @.. thread=true DownparamU[2:NumStates,1] = Γ*(β/(dExt^2) + (ExtList[2:NumStates]/(2*dExt))) # backward
+        @.. thread=true DownparamU[1:NumStates-1,2] = Γ*(β/(dExt^2) - (ExtList[2:NumStates]/(2*dExt))) # forward
 
         # update master parameters based on current states
         for i in 1:NumGenerators # upper cortex
@@ -148,8 +148,8 @@ using GillespieTransitions
         end
 
 # *** Wrap all of these parameters into an array and just update each component of the array
-        noBoundVec[1] = length(findall(x -> x > 0, GenList[1:NumGenerators,2]))
-        noBoundVec[2] = length(findall(x -> x > 0, GenList[(1+NumGenerators):2*NumGenerators,2]))
+        noBoundVec[1] = count(x->x>0, GenList[1:NumGenerators,2])
+        noBoundVec[2] = count(x->x>0, GenList[(1+NumGenerators):2*NumGenerators,2])
         avgYVec[1]    = mean(ExtList[convert(Array{Int64,1},GenList[findall(x -> x > 0, GenList[1:NumGenerators,2]),1])])
         avgYVec[3]    = mean(ExtList[convert(Array{Int64,1},GenList[findall(x -> x > 0, GenList[(1+NumGenerators):2*NumGenerators,2]).+NumGenerators,1])])
         avgYVec[2]    = mean(ExtList[convert(Array{Int64,1},GenList[findall(x -> x < 0, GenList[1:NumGenerators,2]),1])])
