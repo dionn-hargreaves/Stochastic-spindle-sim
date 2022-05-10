@@ -11,7 +11,7 @@ function stochasticSpindleSim(Notes,NumGenerators,NumStates,finalTime,burnTime,m
 
     # cd(workingFolder)
 
-    folderName = datadir("sims",Notes,"GillespieRunData_$(Dates.format(Dates.now(),"yy-mm-dd-HH-MM-SS"))")
+    folderName = datadir(Notes,"GillespieRunData_$(Dates.format(Dates.now(),"yy-mm-dd-HH-MM-SS"))")
     mkpath(folderName)
 
     ExtList = LinRange(0,maxExt,NumStates) # full list  of available extensions
